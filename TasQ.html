@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TasQ</title>
+<style>
+:root{--bg:#fff3ea;--card:#fff;--ink:#4a3a3a;--muted:#a58f8f;--accent:#ff8fa3;--accent-ink:#fff;--line:#f3d8ca;--top:#ffe3e8;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#241d24;--card:#342a35;--ink:#f6e9ee;--muted:#b9a3ad;--accent:#e87a90;--accent-ink:#2a1b21;--line:#4a3d4b;--top:#4a3040;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#241d24;--card:#342a35;--ink:#f6e9ee;--muted:#b9a3ad;--accent:#e87a90;--accent-ink:#2a1b21;--line:#4a3d4b;--top:#4a3040;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Nunito","Trebuchet MS",system-ui,sans-serif;min-height:100vh}
+main{max-width:460px;margin:0 auto;padding:20px 16px 40px}
+header{text-align:center}
+h1{margin:4px 0 2px;font-size:1.9rem;letter-spacing:.5px}
+.sub{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+.score{display:inline-block;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:6px 16px;font-weight:700}
+#cat{transform-origin:50% 100%}
+.hop{animation:hop .5s ease-out}
+.wiggle{animation:wiggle .4s ease-in-out}
+.bump{animation:bump .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes hop{30%{transform:translateY(-16px) scale(.95,1.08)}60%{transform:translateY(0) scale(1.08,.92)}100%{transform:none}}
+@keyframes wiggle{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@keyframes bump{40%{transform:scale(1.25)}100%{transform:none}}
+.add{display:flex;gap:8px;margin:18px 0 10px}
+input{flex:1;min-width:0;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:inherit;transition:border-color .15s,box-shadow .15s}
+input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--top)}
+button{font:inherit;cursor:pointer;border:0}
+.push{background:var(--accent);color:var(--accent-ink);font-weight:800;padding:0 20px;border-radius:14px;transition:transform .15s}
+.pop{width:100%;margin:6px 0 16px;padding:12px;border-radius:14px;background:var(--card);color:var(--ink);border:2px dashed var(--accent);font-weight:800;transition:transform .15s,opacity .2s}
+.pop:disabled{opacity:.45;cursor:default}
+button:hover:not(:disabled){transform:translateY(-1px)}
+button:active:not(:disabled){transform:scale(.96)}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+li{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 12px;max-height:120px;transition:max-height .25s ease,opacity .2s,transform .2s,padding .25s,margin .25s,border-width .25s,background .2s,box-shadow .2s}
+li.top{background:var(--top);border-color:var(--accent)}
+li.new{animation:in .4s cubic-bezier(.34,1.56,.64,1)}
+li.out{animation:out .28s ease-in forwards}
+li.gone{max-height:0;opacity:0;transform:scale(.9);padding-top:0;padding-bottom:0;margin-top:-8px;border-width:0;overflow:hidden}
+li.drag{box-shadow:0 8px 22px rgba(120,60,70,.25);position:relative;z-index:2;transition:box-shadow .15s;user-select:none;-webkit-user-select:none}
+@keyframes in{from{opacity:0;transform:translateY(-14px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes out{to{opacity:0;transform:translateX(70px) rotate(4deg) scale(.9)}}
+.grip{flex:none;width:14px;height:20px;background:radial-gradient(circle,var(--muted) 1.6px,transparent 1.8px) 0 0/7px 7px;opacity:.7;cursor:grab;touch-action:none}
+li.drag .grip{cursor:grabbing}
+li .t{flex:1;overflow-wrap:anywhere}
+li .tag{display:none;font-size:.7rem;font-weight:800;color:var(--accent);text-transform:uppercase}
+li.top .tag{display:inline}
+.x{flex:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--bg);color:var(--muted);font-size:1.25rem;font-weight:700;line-height:1;padding:0 0 2px;transition:background .15s,color .15s,transform .15s}
+.x:hover,.x:focus-visible{background:var(--accent);color:var(--accent-ink);outline:none;transform:rotate(90deg)}
+.empty{text-align:center;color:var(--muted);padding:24px 0;animation:in .4s ease-out}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01s!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<svg id="cat" width="84" height="76" viewBox="0 0 84 76" aria-hidden="true">
+<path d="M10 30 L14 4 L34 18 Z M74 30 L70 4 L50 18 Z" fill="#ffb27a"/>
+<path d="M15 24 L16 11 L26 18 Z M69 24 L68 11 L58 18 Z" fill="#ff8fa3"/>
+<ellipse cx="42" cy="42" rx="34" ry="29" fill="#ffb27a"/>
+<ellipse cx="31" cy="38" rx="4" ry="5" fill="#4a3a3a"/><ellipse cx="53" cy="38" rx="4" ry="5" fill="#4a3a3a"/>
+<circle cx="32.5" cy="36" r="1.4" fill="#fff"/><circle cx="54.5" cy="36" r="1.4" fill="#fff"/>
+<path d="M39 46 L45 46 L42 50 Z" fill="#ff8fa3"/>
+<path id="mouth" d="M42 50 Q37 56 32 52 M42 50 Q47 56 52 52" stroke="#4a3a3a" stroke-width="2" fill="none" stroke-linecap="round"/>
+<path d="M8 44 H22 M8 52 H22 M76 44 H62 M76 52 H62" stroke="#4a3a3a" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
+<h1>TasQ</h1>
+<p class="sub">First in, first out. Purr-fectly simple.</p>
+<div class="score">🐟 Treats earned: <span id="score">0</span></div>
+</header>
+<div class="add">
+<input id="in" placeholder="Add a task to the queue…" maxlength="120" autocomplete="off">
+<button class="push" id="push">Add</button>
+</div>
+<button class="pop" id="pop">🐾 Finish the next task</button>
+<ul id="list"></ul>
+</main>
+<script>
+var tasks=[],score=0,nid=1,fresh=0,busy=false;
+try{var s=JSON.parse(localStorage.getItem("tasq")||"null");if(s){tasks=s.tasks||[];score=s.score||0;nid=s.nid||1}}catch(e){}
+var $=function(i){return document.getElementById(i)};
+function save(){try{localStorage.setItem("tasq",JSON.stringify({tasks:tasks,score:score,nid:nid}))}catch(e){}}
+function play(el,cls){el.classList.remove(cls);void el.getBoundingClientRect();el.classList.add(cls)}
+function render(){
+  $("score").textContent=score;
+  $("pop").disabled=!tasks.length;
+  var l=$("list");l.innerHTML="";
+  if(!tasks.length){l.innerHTML='<div class="empty">The queue is empty… time for a catnap 😴</div>';return}
+  tasks.forEach(function(t,i){
+    var li=document.createElement("li");
+    li.dataset.id=t.id;
+    li.className=(i===0?"top ":"")+(t.id===fresh?"new":"");
+    var g=document.createElement("span");g.className="grip";g.title="Drag to reorder";
+    g.onpointerdown=function(e){startDrag(e,li,g)};
+    var sp=document.createElement("span");sp.className="t";sp.textContent=t.text;
+    var tg=document.createElement("span");tg.className="tag";tg.textContent="next";
+    var b=document.createElement("button");b.className="x";b.textContent="×";b.title="Remove";b.setAttribute("aria-label","Remove task");
+    b.onclick=function(){removeTask(t.id,li)};
+    li.appendChild(g);li.appendChild(sp);li.appendChild(tg);li.appendChild(b);
+    l.appendChild(li);
+  });
+  fresh=0;
+}
+function happy(){
+  var m=$("mouth");m.setAttribute("d","M42 50 Q37 60 30 52 M42 50 Q47 60 54 52");
+  play($("cat"),"hop");
+  setTimeout(function(){m.setAttribute("d","M42 50 Q37 56 32 52 M42 50 Q47 56 52 52")},700);
+}
+function push(){
+  var v=$("in").value.trim();if(!v)return;
+  var t={id:nid++,text:v};tasks.push(t);fresh=t.id;
+  $("in").value="";save();render();$("in").focus();play($("cat"),"wiggle");
+}
+function pop(){
+  if(busy||!tasks.length)return;
+  busy=true;
+  var li=$("list").firstElementChild;li.classList.remove("new");li.classList.add("out");
+  setTimeout(function(){
+    tasks.shift();score++;save();busy=false;render();
+    play(document.querySelector(".score"),"bump");happy();
+  },280);
+}
+function removeTask(id,li){
+  li.style.maxHeight=li.offsetHeight+"px";void li.offsetHeight;
+  li.classList.add("gone");
+  setTimeout(function(){tasks=tasks.filter(function(x){return x.id!==id});save();render()},260);
+}
+function startDrag(e,li,grip){
+  if(busy)return;
+  e.preventDefault();
+  var ul=$("list");
+  ul.setPointerCapture(e.pointerId);
+  li.classList.remove("new");li.classList.add("drag");
+  function items(){return [].slice.call(ul.children).filter(function(c){return c.tagName==="LI"})}
+  var startY=e.clientY,baseTop=li.offsetTop,lastY=startY;
+  function update(){
+    var desired=baseTop+(lastY-startY),center=desired+li.offsetHeight/2;
+    var others=items().filter(function(c){return c!==li}),target=null;
+    for(var k=0;k<others.length;k++){var o=others[k];if(center<o.offsetTop+o.offsetHeight/2){target=o;break}}
+    if(target!==li.nextElementSibling){
+      var before={};
+      others.forEach(function(c){before[c.dataset.id]=c.getBoundingClientRect().top;c.style.transition="none";c.style.transform=""});
+      ul.insertBefore(li,target);
+      others.forEach(function(c){
+        var dy=before[c.dataset.id]-c.getBoundingClientRect().top;
+        if(!dy){c.style.transition="";return}
+        c.style.transform="translateY("+dy+"px)";
+        void c.offsetHeight;
+        c.style.transition="transform .2s ease";c.style.transform="";
+        setTimeout(function(){c.style.transition=""},230);
+      });
+      items().forEach(function(c,i){c.classList.toggle("top",i===0)});
+    }
+    li.style.transform="translateY("+(desired-li.offsetTop)+"px) scale(1.03)";
+  }
+  function move(ev){lastY=ev.clientY;update()}
+  function up(){
+    ul.removeEventListener("pointermove",move);
+    ul.removeEventListener("pointerup",up);
+    ul.removeEventListener("pointercancel",up);
+    var byId={};tasks.forEach(function(t){byId[t.id]=t});
+    tasks=items().map(function(c){return byId[c.dataset.id]});
+    save();
+    li.style.transition="transform .18s ease,box-shadow .18s";li.style.transform="";
+    setTimeout(function(){li.classList.remove("drag");li.style.transition=""},190);
+  }
+  update();
+  ul.addEventListener("pointermove",move);
+  ul.addEventListener("pointerup",up);
+  ul.addEventListener("pointercancel",up);
+}
+$("push").onclick=push;$("pop").onclick=pop;
+$("in").addEventListener("keydown",function(e){if(e.key==="Enter")push()});
+render();
+</script>
+</body>
+</html>
